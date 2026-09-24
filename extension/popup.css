@@ -1,0 +1,31 @@
+* { box-sizing: border-box; margin: 0; }
+body { width: 320px; padding: 14px; font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: #f7f3ea; color: #221e19; }
+header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+header b { font-size: 15px; }
+#who { margin-left: auto; font-size: 12px; color: #8f8474; }
+.lede { color: #5b5348; margin-bottom: 12px; }
+form { display: flex; flex-direction: column; gap: 10px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 600; color: #5b5348; }
+input { height: 36px; border: 1px solid #d7ccb8; border-radius: 9px; padding: 0 10px; font-size: 14px; background: #fffdf8; color: #221e19; width: 100%; }
+input:focus { outline: 2px solid #b4432a; outline-offset: 1px; }
+details summary { font-size: 12px; color: #8f8474; cursor: pointer; margin-bottom: 6px; }
+button.primary { height: 38px; border: 0; border-radius: 10px; background: #b4432a; color: #fffaf2; font-weight: 700; font-size: 14px; cursor: pointer; width: 100%; }
+button.primary:hover { background: #9c3a24; }
+button.primary:disabled { opacity: .55; cursor: default; }
+.err { color: #b3412f; font-size: 13px; min-height: 1em; }
+.today { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #efe8da; margin-bottom: 10px; }
+#today { font: 700 20px ui-monospace, Menlo, monospace; }
+.page { background: #fffdf8; border: 1px solid #e6dece; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.kicker { font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #b4432a; }
+.ptitle { font-weight: 600; }
+.muted { color: #8f8474; } .small { font-size: 12px; }
+.links { display: flex; justify-content: space-between; margin: 12px 2px 8px; font-size: 13px; }
+a { color: #b4432a; font-weight: 600; text-decoration: none; }
+a:hover { text-decoration: underline; }
+footer { border-top: 1px solid #e6dece; padding-top: 8px; }
+.linkish { border: 0; background: none; color: #8f8474; cursor: pointer; font-size: 12.5px; padding: 0; }
+@media (prefers-color-scheme: dark) {
+  body { background: #181613; color: #ece5d8; } input { background: #1e1b17; color: #ece5d8; border-color: #443d34; }
+  .today { background: #221f1b; } .page { background: #1e1b17; border-color: #332e28; } footer { border-color: #332e28; }
+  .kicker, a { color: #e7866b; } .lede, label { color: #b9ae9d; }
+}

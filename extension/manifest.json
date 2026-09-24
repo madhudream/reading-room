@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Reading Room",
+  "short_name": "Reading Room",
+  "version": "1.1.0",
+  "description": "Read on the original site: time your reading, finish it, and send it to your Reading Room for the quiz and recall.",
+  "homepage_url": "https://reading.carebun.com",
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "action": { "default_popup": "popup.html", "default_title": "Reading Room", "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png" } },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://reading.carebun.com/*", "http://localhost:3500/*"],
+  "content_scripts": [{ "matches": ["http://*/*", "https://*/*"], "exclude_matches": ["https://reading.carebun.com/*", "http://localhost:3500/*"], "js": ["content.js"], "run_at": "document_idle" }]
+}

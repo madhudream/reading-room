@@ -1,0 +1,8 @@
+#   gcloud builds submit --config cloudbuild.yaml --substitutions _TAG=$(date +%Y%m%d-%H%M%S) .
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REPO}/lms:${_TAG}", "."]
+images: ["${_REPO}/lms:${_TAG}"]
+substitutions:
+  _REPO: us-central1-docker.pkg.dev/all-madhu/apps
+  _TAG: latest

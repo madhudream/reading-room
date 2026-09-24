@@ -1,0 +1,63 @@
+#!/usr/bin/env bun
+/** drives the real UI: read → finish → quiz (answer one, skip one) → recall → notebook.  bun scripts/e2e.ts <outdir> */
+import puppeteer from "puppeteer-core";
+const out = process.argv[2] || ".data/shots", base = process.argv[3] || "http://localhost:3500";
+const browser = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 1440, height: 900 });
+page.on("pageerror", (e) => console.log("PAGE ERROR", (e as Error).message));
+page.on("console", (m) => m.type() === "error" && console.log("console.error", m.text()));
+await page.goto(base, { waitUntil: "networkidle0" });
+await page.type('input[autocomplete="username"]', process.env.SHOT_USER || "");
+await page.type('input[type="password"]', process.env.SHOT_PASS || "");
+await page.click("button.btn.primary");
+await page.waitForSelector(".today-head", { timeout: 10000 });
+console.log("signed in");
+const lib = await page.evaluate(async () => (await (await fetch("/api/library")).json()).items as { _id: string; url: string }[]);
+const it = lib.find((i) => i.url.endsWith(process.env.E2E_SLUG || "/k/03"))!;
+await page.goto(`${base}/read/${encodeURIComponent(it._id)}`, { waitUntil: "networkidle0" });
+await page.waitForSelector(".prose");
+const clickText = async (sel: string, text: string) => {
+  await page.waitForFunction((s, t) => [...document.querySelectorAll(s)].some((b) => b.textContent?.includes(t) && !(b as HTMLButtonElement).disabled), { timeout: 40000 }, sel, text);
+  await page.evaluate((s, t) => ([...document.querySelectorAll(s)].find((b) => b.textContent?.includes(t)) as HTMLElement).click(), sel, text);
+};
+await clickText("button", "I’ve finished");
+try { await page.waitForSelector(".quiz-q", { timeout: 60000 }); } catch (e) { await page.screenshot({ path: `${out}/e2e-fail.png` }); throw e; }
+console.log("quiz:", await page.$eval(".quiz-q", (e) => e.textContent));
+await page.click(".choice");
+await page.waitForSelector(".quiz-why");
+console.log("feedback:", await page.$eval(".quiz-why", (e) => e.textContent?.slice(0, 120)));
+await page.screenshot({ path: `${out}/e2e-quiz.png` });
+await clickText("button", "Next");
+await clickText("button", "Skip this question");
+await clickText("button", "Skip the quiz");
+await page.waitForSelector(".recallbox textarea");
+await page.type(".recallbox textarea", "An agent needs different kinds of memory: semantic facts like a card file, episodic memories of past conversations, and procedural know-how for how to do things.");
+await page.screenshot({ path: `${out}/e2e-recall.png` });
+await clickText("button", "Save & check");
+await page.waitForSelector(".graded", { timeout: 60000 });
+console.log("graded:", await page.$eval(".verdict", (e) => e.textContent));
+await page.screenshot({ path: `${out}/e2e-graded.png`, fullPage: false });
+await clickText("button", "Continue");
+await page.goto(`${base}/notebook`, { waitUntil: "networkidle0" });
+console.log("notebook notes:", await page.$$eval(".nb-note", (n) => n.length));
+await page.screenshot({ path: `${out}/e2e-notebook.png` });
+await page.goto(`${base}/add`, { waitUntil: "networkidle0" });
+await page.type(".command textarea", "system design posts from https://outcomeschool.com/blog");
+await page.keyboard.press("Enter");
+await page.waitForSelector(".preview", { timeout: 60000 });
+console.log("preview:", await page.$eval(".preview-head p", (e) => e.textContent));
+await page.screenshot({ path: `${out}/e2e-add.png` });
+// select text and ask the assistant
+await page.goto(`${base}/read/${encodeURIComponent(it._id)}`, { waitUntil: "networkidle0" });
+await page.evaluate(() => { const p = document.querySelector(".prose p")!; const r = document.createRange(); r.selectNodeContents(p); const s = getSelection()!; s.removeAllRanges(); s.addRange(r); document.dispatchEvent(new MouseEvent("mouseup")); });
+await page.waitForSelector(".sel-pop");
+await page.click(".sel-pop");
+await page.waitForSelector(".assist .quote");
+await page.type(".assist textarea", "Explain this in one line.");
+await page.keyboard.press("Enter");
+await page.waitForFunction(() => { const m = document.querySelectorAll(".assist .msg.assistant .md"); return m.length && (m[m.length - 1].textContent || "").length > 40; }, { timeout: 60000 });
+await Bun.sleep(2500);
+await page.screenshot({ path: `${out}/e2e-assistant.png` });
+console.log("assistant ok");
+await browser.close();

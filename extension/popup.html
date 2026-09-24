@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Reading Room</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <header><img src="icons/icon32.png" alt="" width="24" height="24"><b>Reading Room</b><span id="who"></span></header>
+  <section id="signin" hidden>
+    <p class="lede">Sign in to time your reading on any site and finish it from there.</p>
+    <form id="login">
+      <label>Username<input name="username" autocomplete="username" autocapitalize="none" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <details><summary>Server</summary><input name="base" placeholder="https://reading.carebun.com"></details>
+      <button class="primary" type="submit">Sign in</button>
+      <p class="err" id="err"></p>
+    </form>
+  </section>
+  <section id="main" hidden>
+    <div class="today"><span id="today">…</span><span class="muted">reading today</span></div>
+    <div class="page">
+      <p class="kicker" id="pstate">This page</p>
+      <p class="ptitle" id="ptitle"></p>
+      <button class="primary" id="start">Start reading</button>
+      <p class="muted small" id="phint"></p>
+    </div>
+    <div class="links"><a href="#" data-open="/">Open the Reading Room</a><a href="#" data-open="/recall">Today’s recall</a></div>
+    <footer><button class="linkish" id="logout">Sign out</button></footer>
+  </section>
+  <script src="popup.js"></script>
+</body>
+</html>
