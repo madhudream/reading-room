@@ -16,7 +16,7 @@ import { parseHTML } from "linkedom";
 import { createHash } from "node:crypto";
 import { C, get, put } from "./db";
 import { getBlob, putBlob } from "./blobs";
-import { fetchText } from "./discover";
+import { fetchText, frontMatter } from "./discover";
 
 export interface ArticleMeta {
   _id: string; url: string; title: string; byline?: string; siteName?: string; excerpt?: string; image?: string;
@@ -82,14 +82,14 @@ async function fromGithubMarkdown(url: string, id: string): Promise<ArticleMeta 
   const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
   const r = await fetch(raw, { signal: AbortSignal.timeout(20_000) });
   if (!r.ok) throw new Error(r.status === 404 ? "not on GitHub yet (push the file)" : `GitHub answered ${r.status}`);
-  const md = await r.text();
-  const title = md.match(/^#\s+(.+)$/m)?.[1]?.trim() || path.split("/").pop()!;
+  const { meta: fm, body: md } = frontMatter(await r.text());
+  const title = fm.title || md.match(/^#\s+(.+)$/m)?.[1]?.trim() || path.split("/").pop()!;
   const body = md.replace(/^#\s+.+$/m, ""); // the title is shown above the article
   const clean = sanitize(await marked.parse(body, { gfm: true }), url.replace(/\/[^/]*$/, "/"));
   const text = md.replace(/```[\s\S]*?```/g, " ").replace(/[#*_`>|[\]]/g, " ").replace(/\s+/g, " ").trim();
   const words = text.split(/\s+/).length;
   const meta: ArticleMeta = {
-    _id: id, url, title, siteName: `${repo} docs`, excerpt: text.slice(0, 300), words, minutes: Math.max(1, Math.round(words / 230)),
+    _id: id, url, title, siteName: fm.part ? `${repo} · ${fm.part}` : `${repo} docs`, excerpt: (fm.summary || text).slice(0, 300), words, minutes: Math.max(1, Math.round(words / 230)),
     outline: clean.outline, linkOut: false, fetchedAt: Date.now(),
   };
   await putBlob(`articles/${id}.json`, { html: clean.html, text: md } satisfies ArticleBody);

@@ -11,7 +11,7 @@ const by = process.env.ADMIN_USERNAME || "hanu";
 const seeds = [
   { name: "Outcome School blogs", description: "Amit Shekhar’s AI posts: LLM architecture, attention, inference and serving, RAG, agents and the math underneath, one clear idea at a time. New posts arrive daily.", source: "https://outcomeschool.com/blog", instruction: "AI blogs only", hue: 14, order: 1 },
   { name: "Memory for AI Agents", description: "How an AI assistant remembers you, in plain English: the card file with two dates, the secretary who never tears a page out, the librarian with three ways to search.", source: "https://memory-notes-246726325229.us-central1.run.app/", instruction: "all", hue: 20, order: 2 },
-  { name: "Thinking in Vectors", description: "A book in 66 chapters, from “what is a vector?” to retrieval over a hundred million chunks. Every idea built from something you already know.", source: "https://madhudream.dev/learn/vectors", instruction: "all", hue: 212, order: 3 },
+  { name: "Thinking in Vectors", description: "A book in 66 chapters, from “what is a vector?” to retrieval over a hundred million chunks. Every idea built from something you already know.", source: "https://github.com/madhudream/vectors-knowledge/tree/main/chapters", instruction: "all", hue: 212, order: 3 },
 ];
 for (const s of seeds) {
   try { const c = await catalog.fromSource({ ...s, _id: undefined, by }); console.log(`✓ ${c.name}: ${c.count} articles`); }

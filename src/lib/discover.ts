@@ -164,6 +164,18 @@ async function fromSitemap(base: URL): Promise<Candidate[]> {
 }
 
 // ----------------------------------------------------------------------- main
+/** `---\ntitle: "…"\nsummary: …\n---` at the top of a Markdown file: its simple keys, and the rest */
+export function frontMatter(md: string): { meta: Record<string, string>; body: string } {
+  const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!m) return { meta: {}, body: md };
+  const meta: Record<string, string> = {};
+  for (const line of m[1].split(/\r?\n/)) {
+    const kv = line.match(/^([\w-]+):\s*(.*)$/);
+    if (kv) meta[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, "");
+  }
+  return { meta, body: md.slice(m[0].length) };
+}
+
 // ------------------------------------------------------------- GitHub docs
 /** github.com/<owner>/<repo>/tree/<branch>/<folder>: every Markdown file in it, titled by its first heading */
 const GH_TREE = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/tree\/([\w.\/-]+?)\/(.+?)\/?$/;
@@ -174,17 +186,18 @@ async function fromGithub(url: string): Promise<Discovery | null> {
   const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${dir}?ref=${branch}`, { headers: { "user-agent": UA, accept: "application/vnd.github+json" }, signal: AbortSignal.timeout(15_000) });
   if (!r.ok) throw new Error(r.status === 404 ? "That GitHub folder is not public (or not pushed yet)." : `GitHub answered ${r.status}`);
   const files = ((await r.json()) as { name: string; type: string; download_url: string; html_url: string }[])
-    .filter((f) => f.type === "file" && /\.md$/i.test(f.name) && !/^readme\.md$/i.test(f.name)).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
+    .filter((f) => f.type === "file" && /\.md$/i.test(f.name) && !/^readme\.md$/i.test(f.name)).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 300);
   const candidates = await Promise.all(files.map(async (f) => {
     let title = titleFromSlug(f.name.replace(/\.md$/i, "").replace(/^\d+[-_]/, "")), summary: string | undefined;
     try {
-      const md = await (await fetch(f.download_url, { signal: AbortSignal.timeout(10_000) })).text();
-      title = md.match(/^#\s+(.+)$/m)?.[1]?.trim() || title;
-      summary = md.replace(/^#.*$/gm, "").replace(/```[\s\S]*?```/g, "").split(/\n\s*\n/).map((p) => clean(p.replace(/[*_`>#[\]()]/g, ""))).find((p) => p.length > 40)?.slice(0, 400);
+      const raw = await (await fetch(f.download_url, { signal: AbortSignal.timeout(10_000) })).text();
+      const { meta, body: md } = frontMatter(raw);
+      title = meta.title || md.match(/^#\s+(.+)$/m)?.[1]?.trim() || title;
+      summary = meta.summary || md.replace(/^#.*$/gm, "").replace(/```[\s\S]*?```/g, "").split(/\n\s*\n/).map((p) => clean(p.replace(/[*_`>#[\]()]/g, ""))).find((p) => p.length > 40)?.slice(0, 400);
     } catch { /* keep the file name */ }
     return { url: f.html_url, slug: f.name.replace(/\.md$/i, ""), title, summary } as Candidate;
   }));
-  return { source: url, siteName: `${repo} docs`, method: "github", candidates };
+  return { source: url, siteName: /(^|\/)docs$/i.test(dir) ? `${repo} docs` : repo, method: "github", candidates };
 }
 
 export async function discover(inputUrl: string): Promise<Discovery> {
